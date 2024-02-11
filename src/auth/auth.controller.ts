@@ -84,6 +84,7 @@ export class AuthController {
     @Origin() origin: string | undefined,
     @Body() signUpDto: SignUpDto,
   ): Promise<IMessage> {
+    // TODO: make sure that user knows that username is taken
     return await this.authService.signUp(signUpDto, origin);
   }
 
