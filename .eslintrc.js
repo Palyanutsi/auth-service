@@ -22,17 +22,5 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
-    'header/header': [
-      2,
-      'block',
-      [
-        '',
-        '  Free and Open Source - GNU LGPLv3',
-        `  Copyright © ${new Date().getFullYear()}`,
-        '  Afonso Barracha',
-        '',
-      ],
-      2,
-    ],
   },
 };
