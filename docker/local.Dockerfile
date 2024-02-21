@@ -8,8 +8,9 @@ COPY package.json ./
 COPY yarn.lock ./
 
 RUN yarn install
-RUN yarn migrate:create
 
 COPY . .
+
+RUN yarn migrate:create
 
 CMD [ "yarn", "start:dev" ]
