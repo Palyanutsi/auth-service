@@ -13,16 +13,19 @@ This contains the code for a fastify based REST Authentication API, with local a
 
 ## Local Setup
 
-1. Install the dependencies:
-    ```bash
+1. Install the dependencies: 
+   ```bash
     $ yarn install
     ```
 2. Create a .env file with all the fields equal to the [example](.env.example).
-3. Run the app in development mode:
+3. Migrate db
+    ```bash
+    $ yarn migrate:create
+    ```
+4. Run the app in development mode:
     ```bash
     $ yarn start:dev
     ```
-
 ## Testing
 
 **All Unit tests:**
@@ -48,7 +51,3 @@ $ yarn test:cov
 ```bash
 $ yarn test:e2e
 ```
-
-## License
-
-The code of this tutorial is licensed under the GNU LGPLv3 - see the [LICENSE](LICENSE) file for details.
