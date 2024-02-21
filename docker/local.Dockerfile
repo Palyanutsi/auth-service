@@ -11,6 +11,6 @@ RUN yarn install
 
 COPY . .
 
-RUN yarn migrate:create
+# RUN yarn migrate:create
 
 CMD [ "yarn", "start:dev" ]
