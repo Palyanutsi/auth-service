@@ -46,7 +46,19 @@ export class MailerService {
     return Handlebars.compile<ITemplatedData>(templateText, { strict: true });
   }
 
-  public sendConfirmationEmail(user: IUser, token: string): void {
+  private static parseConfirmation(
+    templateName: string,
+  ): Handlebars.TemplateDelegate<IEmailConfirmData> {
+    const templateText = readFileSync(
+      join(__dirname, 'templates', templateName),
+      'utf-8',
+    );
+    return Handlebars.compile<IEmailConfirmData>(templateText, {
+      strict: true,
+    });
+  }
+
+  public sendConfirmationEmail(user: IUser, confirmationCode: string): void {
     const { email, name } = user;
     const subject = 'Confirm your email';
     const html = this.templates.confirmation({
