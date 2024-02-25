@@ -20,7 +20,10 @@ import {
   IAccessPayload,
   IAccessToken,
 } from './interfaces/access-token.interface';
-import { IEmailPayload, IEmailToken } from './interfaces/email-token.interface';
+import {
+  IEmailToken,
+  IEmailPayload,
+} from './interfaces/email-confirm-token.interface';
 import {
   IRefreshPayload,
   IRefreshToken,
@@ -89,11 +92,13 @@ export class JwtService {
     }
   }
 
+  // TODO: write abstraction to pass selected parameters
   public async generateToken(
     user: IUser,
     tokenType: TokenTypeEnum,
     domain?: string | null,
     tokenId?: string,
+    confirmationCode?: string,
   ): Promise<string> {
     const jwtOptions: jwt.SignOptions = {
       issuer: this.issuer,
@@ -130,15 +135,32 @@ export class JwtService {
           ),
         );
       case TokenTypeEnum.CONFIRMATION:
+        const { secret: secretKey, time: timeConfirmation } =
+          this.jwtConfig.confirmation;
+        return this.commonService.throwInternalError(
+          JwtService.generateTokenAsync(
+            {
+              id: user.id,
+              code: confirmationCode,
+              version: user.credentials.version,
+            },
+            secretKey,
+            {
+              ...jwtOptions,
+              expiresIn: timeConfirmation,
+            },
+          ),
+        );
       case TokenTypeEnum.RESET_PASSWORD:
-        const { secret, time } = this.jwtConfig[tokenType];
+        const { secret: secretReset, time: timeReset } =
+          this.jwtConfig.resetPassword;
         return this.commonService.throwInternalError(
           JwtService.generateTokenAsync(
             { id: user.id, version: user.credentials.version },
-            secret,
+            secretReset,
             {
               ...jwtOptions,
-              expiresIn: time,
+              expiresIn: timeReset,
             },
           ),
         );

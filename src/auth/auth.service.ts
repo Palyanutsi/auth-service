@@ -11,7 +11,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { compare } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { Cache } from 'cache-manager';
 import { isEmail } from 'class-validator';
 import dayjs from 'dayjs';
@@ -20,7 +20,7 @@ import { SLUG_REGEX } from '../common/consts/regex.const';
 import { IMessage } from '../common/interfaces/message.interface';
 import { isNull, isUndefined } from '../common/utils/validation.util';
 import { TokenTypeEnum } from '../jwt/enums/token-type.enum';
-import { IEmailToken } from '../jwt/interfaces/email-token.interface';
+import { IEmailToken } from '../jwt/interfaces/email-confirm-token.interface';
 import { IRefreshToken } from '../jwt/interfaces/refresh-token.interface';
 import { JwtService } from '../jwt/jwt.service';
 import { MailerService } from '../mailer/mailer.service';
@@ -35,6 +35,8 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { SignInDto } from './dtos/sign-in.dto';
 import { SignUpDto } from './dtos/sign-up.dto';
 import { IAuthResult } from './interfaces/auth-result.interface';
+import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -47,7 +49,10 @@ export class AuthService {
     private readonly mailerService: MailerService,
   ) {}
 
-  public async signUp(dto: SignUpDto, domain?: string): Promise<IMessage> {
+  public async signUp(
+    dto: SignUpDto,
+    domain?: string,
+  ): Promise<IAuthSignupResponse> {
     const { name, email, password1, password2 } = dto;
     this.comparePasswords(password1, password2);
     const user = await this.usersService.create(
@@ -56,13 +61,18 @@ export class AuthService {
       name,
       password1,
     );
+
+    const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
     const confirmationToken = await this.jwtService.generateToken(
       user,
       TokenTypeEnum.CONFIRMATION,
       domain,
+      '0',
+      await hash(confirmationCode, 10),
     );
-    this.mailerService.sendConfirmationEmail(user, confirmationToken);
-    return this.commonService.generateMessage('Registration successful');
+
+    this.mailerService.sendConfirmationEmail(user, confirmationCode);
+    return { confirmationToken };
   }
 
   public async confirmEmail(
@@ -70,10 +80,16 @@ export class AuthService {
     domain?: string,
   ): Promise<IAuthResult> {
     const { confirmationToken } = dto;
-    const { id, version } = await this.jwtService.verifyToken<IEmailToken>(
-      confirmationToken,
-      TokenTypeEnum.CONFIRMATION,
-    );
+    const { id, code, version } =
+      await this.jwtService.verifyToken<IEmailToken>(
+        confirmationToken,
+        TokenTypeEnum.CONFIRMATION,
+      );
+
+    if (!(await compare(dto.confirmationCode.toUpperCase(), code))) {
+      throw new BadRequestException('Wrong verification code');
+    }
+
     const user = await this.usersService.confirmEmail(id, version);
     const [accessToken, refreshToken] =
       await this.jwtService.generateAuthTokens(user, domain);

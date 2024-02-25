@@ -6,8 +6,9 @@
 
 import { TemplateDelegate } from 'handlebars';
 import { ITemplatedData } from './template-data.interface';
+import { IEmailConfirmData } from './template-confirm.interface';
 
 export interface ITemplates {
-  confirmation: TemplateDelegate<ITemplatedData>;
+  confirmation: TemplateDelegate<IEmailConfirmData>;
   resetPassword: TemplateDelegate<ITemplatedData>;
 }

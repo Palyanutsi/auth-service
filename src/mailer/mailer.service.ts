@@ -14,6 +14,7 @@ import { join } from 'path';
 import { IEmailConfig } from '../config/interfaces/email-config.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { ITemplatedData } from './interfaces/template-data.interface';
+import { IEmailConfirmData } from './interfaces/template-confirm.interface';
 import { ITemplates } from './interfaces/templates.interface';
 
 @Injectable()
@@ -31,7 +32,7 @@ export class MailerService {
     this.domain = this.configService.get<string>('domain');
     this.loggerService = new Logger(MailerService.name);
     this.templates = {
-      confirmation: MailerService.parseTemplate('confirmation.hbs'),
+      confirmation: MailerService.parseConfirmation('confirmation.hbs'),
       resetPassword: MailerService.parseTemplate('reset-password.hbs'),
     };
   }
@@ -46,13 +47,24 @@ export class MailerService {
     return Handlebars.compile<ITemplatedData>(templateText, { strict: true });
   }
 
-  public sendConfirmationEmail(user: IUser, token: string): void {
+  private static parseConfirmation(
+    templateName: string,
+  ): Handlebars.TemplateDelegate<IEmailConfirmData> {
+    const templateText = readFileSync(
+      join(__dirname, 'templates', templateName),
+      'utf-8',
+    );
+    return Handlebars.compile<IEmailConfirmData>(templateText, {
+      strict: true,
+    });
+  }
+
+  public sendConfirmationEmail(user: IUser, confirmationCode: string): void {
     const { email, name } = user;
     const subject = 'Confirm your email';
     const html = this.templates.confirmation({
-      name,
-      // TODO: change when production to the https
-      link: `http://${this.domain}/api/auth/confirm-email/${token}`,
+      name: name,
+      code: confirmationCode,
     });
     this.sendEmail(email, subject, html, 'A new confirmation email was sent.');
   }
