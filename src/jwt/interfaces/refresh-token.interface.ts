@@ -4,11 +4,12 @@
   Afonso Barracha
 */
 
-import { IEmailPayload } from './email-token.interface';
 import { ITokenBase } from './token-base.interface';
+import { IAccessPayload } from './access-token.interface';
 
-export interface IRefreshPayload extends IEmailPayload {
+export interface IRefreshPayload extends IAccessPayload {
   tokenId: string;
+  version: number;
 }
 
 export interface IRefreshToken extends IRefreshPayload, ITokenBase {}

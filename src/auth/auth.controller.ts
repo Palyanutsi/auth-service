@@ -48,6 +48,7 @@ import { IOAuthProvidersResponse } from './interfaces/oauth-provider-response.in
 import { AuthResponseUserMapper } from './mappers/auth-response-user.mapper';
 import { AuthResponseMapper } from './mappers/auth-response.mapper';
 import { OAuthProvidersResponseMapper } from './mappers/oauth-provider-response.mapper';
+import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
 
 @ApiTags('Auth')
 @Controller('api/auth')
@@ -83,7 +84,7 @@ export class AuthController {
   public async signUp(
     @Origin() origin: string | undefined,
     @Body() signUpDto: SignUpDto,
-  ): Promise<IMessage> {
+  ): Promise<IAuthSignupResponse> {
     // TODO: make sure that user knows that username is taken
     return await this.authService.signUp(signUpDto, origin);
   }
@@ -163,7 +164,7 @@ export class AuthController {
   }
 
   @Public()
-  @Get('/confirm-email/:confirmationToken')
+  @Post('/confirm-email')
   @ApiOkResponse({
     type: AuthResponseMapper,
     description: 'Confirms the user email and returns the access token',
@@ -172,15 +173,14 @@ export class AuthController {
     description: 'Invalid token',
   })
   @ApiBadRequestResponse({
-    description:
-      'Something is invalid on the request body, or Token is invalid or expired',
+    description: 'Wrong confirmation code',
   })
   public async confirmEmail(
     @Origin() origin: string | undefined,
-    @Param() confirmationToken: ConfirmEmailDto,
+    @Body() confirmEmailDto: ConfirmEmailDto,
     @Res() res: FastifyReply,
   ): Promise<void> {
-    const result = await this.authService.confirmEmail(confirmationToken);
+    const result = await this.authService.confirmEmail(confirmEmailDto);
     this.saveRefreshCookie(res, result.refreshToken)
       .status(HttpStatus.OK)
       .send(AuthResponseMapper.map(result));
@@ -215,6 +215,7 @@ export class AuthController {
   public async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
   ): Promise<IMessage> {
+    // TODO: by code reset
     return this.authService.resetPassword(resetPasswordDto);
   }
 
