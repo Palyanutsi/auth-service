@@ -11,7 +11,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { compare } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { Cache } from 'cache-manager';
 import { isEmail } from 'class-validator';
 import dayjs from 'dayjs';
@@ -61,16 +61,18 @@ export class AuthService {
       name,
       password1,
     );
+
     const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
     const confirmationToken = await this.jwtService.generateToken(
       user,
       TokenTypeEnum.CONFIRMATION,
       domain,
       '0',
-      confirmationCode,
+      await hash(confirmationCode, 10),
     );
+
     this.mailerService.sendConfirmationEmail(user, confirmationCode);
-    return { confirmationCode, confirmationToken };
+    return { confirmationToken };
   }
 
   public async confirmEmail(
@@ -84,8 +86,9 @@ export class AuthService {
         TokenTypeEnum.CONFIRMATION,
       );
 
-    if (code.toUpperCase() !== dto.confirmationCode.toUpperCase())
+    if (!(await compare(dto.confirmationCode.toUpperCase(), code))) {
       throw new BadRequestException('Wrong verification code');
+    }
 
     const user = await this.usersService.confirmEmail(id, version);
     const [accessToken, refreshToken] =
