@@ -10,10 +10,11 @@ import { OAuthProviderEntity } from './entities/oauth-provider.entity';
 import { UserEntity } from './entities/user.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { UserCleanupService } from './users-cleanup.service';
 
 @Module({
   imports: [MikroOrmModule.forFeature([UserEntity, OAuthProviderEntity])],
-  providers: [UsersService],
+  providers: [UsersService, UserCleanupService],
   exports: [UsersService],
   controllers: [UsersController],
 })
