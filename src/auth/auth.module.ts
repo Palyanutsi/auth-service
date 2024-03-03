@@ -10,9 +10,10 @@ import { MailerModule } from '../mailer/mailer.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [UsersModule, JwtModule, MailerModule],
+  imports: [UsersModule, JwtModule, MailerModule, HttpModule],
   providers: [AuthService],
   controllers: [AuthController],
 })
