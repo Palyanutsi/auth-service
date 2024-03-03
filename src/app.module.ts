@@ -23,6 +23,7 @@ import { JwtModule } from './jwt/jwt.module';
 import { MailerModule } from './mailer/mailer.module';
 import { Oauth2Module } from './oauth2/oauth2.module';
 import { UsersModule } from './users/users.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { UsersModule } from './users/users.module';
     JwtModule,
     MailerModule,
     Oauth2Module,
+    ScheduleModule.forRoot(),
   ],
   providers: [
     AppService,
