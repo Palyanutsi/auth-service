@@ -103,21 +103,9 @@ export class AuthService {
         email: user.email,
       }),
     );
-    console.log(checkRes.data)
     const [accessToken, refreshToken] =
       await this.jwtService.generateAuthTokens(user, domain);
     return { user, accessToken, refreshToken };
-  }
-
-  public async check() {
-    const checkRes = await firstValueFrom(
-      this.httpService.post('http://localhost:5000/users', {
-        id: 6,
-        username: 'bro',
-        email: 'koval.pavlo03@gmail.com',
-      }),
-    );
-    console.log('request end', checkRes);
   }
 
   public async signIn(dto: SignInDto, domain?: string): Promise<IAuthResult> {
