@@ -37,6 +37,8 @@ import { SignUpDto } from './dtos/sign-up.dto';
 import { IAuthResult } from './interfaces/auth-result.interface';
 import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -47,6 +49,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
+    private readonly httpService: HttpService,
   ) {}
 
   public async signUp(
@@ -91,9 +94,30 @@ export class AuthService {
     }
 
     const user = await this.usersService.confirmEmail(id, version);
+    // TODO: what if failed?
+    const checkRes = await firstValueFrom(
+      // TODO: use from env url
+      this.httpService.post('http://localhost:5000/users', {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
+    );
+    console.log(checkRes.data)
     const [accessToken, refreshToken] =
       await this.jwtService.generateAuthTokens(user, domain);
     return { user, accessToken, refreshToken };
+  }
+
+  public async check() {
+    const checkRes = await firstValueFrom(
+      this.httpService.post('http://localhost:5000/users', {
+        id: 6,
+        username: 'bro',
+        email: 'koval.pavlo03@gmail.com',
+      }),
+    );
+    console.log('request end', checkRes);
   }
 
   public async signIn(dto: SignInDto, domain?: string): Promise<IAuthResult> {

@@ -187,6 +187,15 @@ export class AuthController {
   }
 
   @Public()
+  @Get('/check')
+  public async check() {
+    console.log('hello from check');
+    await this.authService.check();
+    console.log('end request');
+    return 'hello world';
+  }
+
+  @Public()
   @Post('/forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
