@@ -5,6 +5,7 @@
 */
 
 import {
+  Body,
   Controller,
   Get,
   HttpStatus,
@@ -37,6 +38,7 @@ export class Oauth2Controller {
   private readonly cookieName: string;
   private readonly refreshTime: number;
   private readonly testing: boolean;
+  private redirectUri: string;
 
   constructor(
     private readonly oauth2Service: Oauth2Service,
@@ -84,7 +86,7 @@ export class Oauth2Controller {
 
   @Public()
   @UseGuards(OAuthFlagGuard(OAuthProvidersEnum.GOOGLE))
-  @Get('google')
+  @Get('google:redirectUri')
   @ApiResponse({
     description: 'Redirects to Google OAuth2 login page',
     status: HttpStatus.TEMPORARY_REDIRECT,
@@ -92,7 +94,12 @@ export class Oauth2Controller {
   @ApiNotFoundResponse({
     description: 'OAuth2 is not enabled for Google',
   })
-  public google(@Res() res: FastifyReply): FastifyReply {
+  public google(
+    @Query('redirect_uri') redirect_uri: string, // TODO: create class
+    @Res() res: FastifyReply,
+  ): FastifyReply {
+    this.redirectUri = redirect_uri;
+    console.log(redirect_uri);
     return this.startRedirect(res, OAuthProvidersEnum.GOOGLE);
   }
 
@@ -219,6 +226,6 @@ export class Oauth2Controller {
         expires: new Date(Date.now() + this.refreshTime * 1000),
       })
       .status(HttpStatus.PERMANENT_REDIRECT)
-      .redirect(`${this.url}/?access_token=${accessToken}`);
+      .redirect(`${this.redirectUri}?access_token=${accessToken}`);
   }
 }
