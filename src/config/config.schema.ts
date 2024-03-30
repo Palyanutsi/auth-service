@@ -19,6 +19,8 @@ export const validationSchema = Joi.object({
   JWT_CONFIRMATION_SECRET: Joi.string().required(),
   JWT_CONFIRMATION_TIME: Joi.number().required(),
   JWT_RESET_PASSWORD_SECRET: Joi.string().required(),
+  JWT_GENERATE_SESSION_SECRET: Joi.string().required(),
+  JWT_GENERATE_SESSION_TIME: Joi.string().required(),
   JWT_RESET_PASSWORD_TIME: Joi.number().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
   JWT_REFRESH_TIME: Joi.number().required(),
