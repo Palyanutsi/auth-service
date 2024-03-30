@@ -45,7 +45,7 @@ export class JwtService {
   }
 
   private static async generateTokenAsync(
-    payload: IAccessPayload | IEmailPayload | IRefreshPayload,
+    payload: IAccessPayload | IEmailPayload | IRefreshPayload | object,
     secret: string,
     options: jwt.SignOptions,
   ): Promise<string> {
@@ -92,78 +92,81 @@ export class JwtService {
     }
   }
 
-  // TODO: write abstraction to pass selected parameters
   public async generateToken(
-    user: IUser,
-    tokenType: TokenTypeEnum,
-    domain?: string | null,
-    tokenId?: string,
-    confirmationCode?: string,
+      payload: Object,
+      subject: string,
+      tokenType: TokenTypeEnum,
+      domain?:string
   ): Promise<string> {
     const jwtOptions: jwt.SignOptions = {
       issuer: this.issuer,
-      subject: user.email,
+      subject: subject,
       audience: domain ?? this.domain,
       algorithm: 'HS256',
-    };
+    }
 
     switch (tokenType) {
       case TokenTypeEnum.ACCESS:
         const { privateKey, time: accessTime } = this.jwtConfig.access;
         return this.commonService.throwInternalError(
-          JwtService.generateTokenAsync({ id: user.id }, privateKey, {
-            ...jwtOptions,
-            expiresIn: accessTime,
-            algorithm: 'RS256',
-          }),
-        );
+            JwtService.generateTokenAsync(payload, privateKey, {
+              ...jwtOptions,
+              expiresIn: accessTime,
+              algorithm: 'RS256',
+            }),
+        )
       case TokenTypeEnum.REFRESH:
         const { secret: refreshSecret, time: refreshTime } =
-          this.jwtConfig.refresh;
+            this.jwtConfig.refresh;
         return this.commonService.throwInternalError(
-          JwtService.generateTokenAsync(
-            {
-              id: user.id,
-              version: user.credentials.version,
-              tokenId: tokenId ?? v4(),
-            },
-            refreshSecret,
-            {
-              ...jwtOptions,
-              expiresIn: refreshTime,
-            },
-          ),
-        );
+            JwtService.generateTokenAsync(
+                payload,
+                refreshSecret,
+                {
+                  ...jwtOptions,
+                  expiresIn: refreshTime,
+                },
+            ),
+        )
       case TokenTypeEnum.CONFIRMATION:
         const { secret: secretKey, time: timeConfirmation } =
-          this.jwtConfig.confirmation;
+            this.jwtConfig.confirmation;
         return this.commonService.throwInternalError(
-          JwtService.generateTokenAsync(
-            {
-              id: user.id,
-              code: confirmationCode,
-              version: user.credentials.version,
-            },
-            secretKey,
-            {
-              ...jwtOptions,
-              expiresIn: timeConfirmation,
-            },
-          ),
-        );
+            JwtService.generateTokenAsync(
+                payload,
+                secretKey,
+                {
+                  ...jwtOptions,
+                  expiresIn: timeConfirmation,
+                },
+            ),
+        )
       case TokenTypeEnum.RESET_PASSWORD:
         const { secret: secretReset, time: timeReset } =
-          this.jwtConfig.resetPassword;
+            this.jwtConfig.resetPassword;
         return this.commonService.throwInternalError(
-          JwtService.generateTokenAsync(
-            { id: user.id, version: user.credentials.version },
-            secretReset,
-            {
-              ...jwtOptions,
-              expiresIn: timeReset,
-            },
-          ),
-        );
+            JwtService.generateTokenAsync(
+                payload,
+                secretReset,
+                {
+                  ...jwtOptions,
+                  expiresIn: timeReset,
+                },
+            ),
+        )
+        case TokenTypeEnum.GENERATE_SESSION:
+            const { secret, time } =
+                this.jwtConfig.generateSession
+            return this.commonService.throwInternalError(
+                JwtService.generateTokenAsync(
+                    payload,
+                    secret,
+                    {
+                        ...jwtOptions,
+                        expiresIn: time,
+                    },
+                ),
+            )
     }
   }
 
@@ -205,8 +208,12 @@ export class JwtService {
     tokenId?: string,
   ): Promise<[string, string]> {
     return Promise.all([
-      this.generateToken(user, TokenTypeEnum.ACCESS, domain, tokenId),
-      this.generateToken(user, TokenTypeEnum.REFRESH, domain, tokenId),
+      this.generateToken({ id: user.id }, user.email, TokenTypeEnum.ACCESS, domain),
+      this.generateToken({
+          id: user.id,
+          version: user.credentials.version,
+          tokenId: tokenId ?? v4(),
+      }, user.email, TokenTypeEnum.REFRESH, domain),
     ]);
   }
 }

@@ -39,6 +39,8 @@ import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface
 import { v4 as uuidv4 } from 'uuid';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import {IUser} from "../users/interfaces/user.interface";
+import {IAuthConfirmationTokenInterface} from "./interfaces/auth-confirmation-token.interface";
 
 @Injectable()
 export class AuthService {
@@ -65,14 +67,7 @@ export class AuthService {
       password1,
     );
 
-    const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
-    const confirmationToken = await this.jwtService.generateToken(
-      user,
-      TokenTypeEnum.CONFIRMATION,
-      domain,
-      '0',
-      await hash(confirmationCode, 10),
-    );
+    const {confirmationToken, confirmationCode} = await this.generateConfirmationToken(user, domain)
 
     this.mailerService.sendConfirmationEmail(user, confirmationCode);
     return { confirmationToken };
@@ -116,12 +111,8 @@ export class AuthService {
       await this.checkLastPassword(user.credentials, password);
     }
     if (!user.confirmed) {
-      const confirmationToken = await this.jwtService.generateToken(
-        user,
-        TokenTypeEnum.CONFIRMATION,
-        domain,
-      );
-      this.mailerService.sendConfirmationEmail(user, confirmationToken);
+      const {confirmationToken, confirmationCode} = await this.generateConfirmationToken(user, domain)
+      this.mailerService.sendConfirmationEmail(user, confirmationCode);
       throw new UnauthorizedException(
         'Please confirm your email, a new email has been sent',
       );
@@ -166,7 +157,8 @@ export class AuthService {
 
     if (!isUndefined(user) && !isNull(user)) {
       const resetToken = await this.jwtService.generateToken(
-        user,
+          { id: user.id, version: user.credentials.version },
+          user.email,
         TokenTypeEnum.RESET_PASSWORD,
         domain,
       );
@@ -298,5 +290,24 @@ export class AuthService {
     }
 
     return this.usersService.findOneByUsername(emailOrUsername, true);
+  }
+
+  private async generateConfirmationToken (user: IUser, domain: string): Promise<IAuthConfirmationTokenInterface>{
+    const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
+    const confirmationToken = await this.jwtService.generateToken(
+        {
+          id: user.id,
+          code: await hash(confirmationCode, 10),
+          version: user.credentials.version,
+        },
+        user.email,
+        TokenTypeEnum.CONFIRMATION,
+        domain
+    )
+
+    return {
+      confirmationToken,
+      confirmationCode
+    }
   }
 }

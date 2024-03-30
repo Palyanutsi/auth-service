@@ -5,6 +5,7 @@
 */
 
 import { faker } from '@faker-js/faker';
+import { compare, hash } from 'bcrypt';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { isJWT, isUUID } from 'class-validator';
@@ -16,10 +17,10 @@ import { validationSchema } from '../../config/config.schema';
 import { IUser } from '../../users/interfaces/user.interface';
 import { TokenTypeEnum } from '../enums/token-type.enum';
 import { IAccessToken } from '../interfaces/access-token.interface';
-import { IEmailToken } from '../interfaces/email-token.interface';
+import { IEmailToken } from '../interfaces/email-confirm-token.interface';
 import { IRefreshToken } from '../interfaces/refresh-token.interface';
 import { JwtService } from '../jwt.service';
-
+import { v4 } from 'uuid';
 describe('JwtService', () => {
   let service: JwtService;
 
@@ -51,7 +52,7 @@ describe('JwtService', () => {
     let token: string;
 
     it('should generate a token', async () => {
-      token = await service.generateToken(user, TokenTypeEnum.ACCESS);
+      token = await service.generateToken({ id: user.id }, user.email, TokenTypeEnum.ACCESS);
       expect(token).toBeDefined();
       expect(isJWT(token)).toBe(true);
     });
@@ -106,7 +107,11 @@ describe('JwtService', () => {
     let token: string;
 
     it('should generate a token', async () => {
-      token = await service.generateToken(user, TokenTypeEnum.REFRESH);
+      token = await service.generateToken({
+        id: user.id,
+        version: user.credentials.version,
+        tokenId: v4(),
+      }, user.email, TokenTypeEnum.REFRESH);
       expect(token).toBeDefined();
       expect(isJWT(token)).toBe(true);
     });
@@ -138,9 +143,17 @@ describe('JwtService', () => {
 
   describe('confirmation tokens', () => {
     let token: string;
+    const confirmationCode = v4().toString().substring(0, 6).toUpperCase();
 
     it('should generate a token', async () => {
-      token = await service.generateToken(user, TokenTypeEnum.CONFIRMATION);
+      token = await service.generateToken({
+            id: user.id,
+            code: await hash(confirmationCode, 10),
+            version: user.credentials.version,
+          },
+          user.email,
+          TokenTypeEnum.CONFIRMATION,
+          );
       expect(token).toBeDefined();
       expect(isJWT(token)).toBe(true);
     });

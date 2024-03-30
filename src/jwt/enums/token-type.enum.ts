@@ -9,4 +9,5 @@ export enum TokenTypeEnum {
   REFRESH = 'refresh',
   CONFIRMATION = 'confirmation',
   RESET_PASSWORD = 'resetPassword',
+  GENERATE_SESSION = 'generateSession'
 }
