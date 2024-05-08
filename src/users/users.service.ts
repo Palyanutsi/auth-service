@@ -40,16 +40,21 @@ export class UsersService {
     provider: OAuthProvidersEnum,
     email: string,
     name: string,
+    username?: string,
     password?: string,
   ): Promise<UserEntity> {
     const isConfirmed = provider !== OAuthProvidersEnum.LOCAL;
     const formattedEmail = email.toLowerCase();
-    await this.checkEmailUniqueness(formattedEmail);
     const formattedName = this.commonService.formatName(name);
+    if (!username) {
+      username = await this.generateUsername(formattedName);
+    }
+    await this.checkEmailUniqueness(formattedEmail);
+    await this.checkUsernameUniqueness(username);
     const user = this.usersRepository.create({
       email: formattedEmail,
       name: formattedName,
-      username: await this.generateUsername(formattedName),
+      username: username,
       password: isUndefined(password) ? 'UNSET' : await hash(password, 10),
       confirmed: isConfirmed,
       credentials: new CredentialsEmbeddable(isConfirmed),

@@ -76,7 +76,7 @@ export class AuthController {
     description: 'The user has been created and is waiting confirmation',
   })
   @ApiConflictResponse({
-    description: 'Email already in use',
+    description: 'Email or username already in use',
   })
   @ApiBadRequestResponse({
     description: 'Something is invalid on the request body',
@@ -86,7 +86,6 @@ export class AuthController {
     @Origin() origin: string | undefined,
     @Body() signUpDto: SignUpDto,
   ): Promise<void> {
-    // TODO: make sure that user knows that username is taken
     const result = await this.authService.signUp(signUpDto, origin);
 
     res

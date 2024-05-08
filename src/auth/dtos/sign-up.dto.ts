@@ -36,4 +36,15 @@ export abstract class SignUpDto extends PasswordsDto {
   @IsEmail()
   @Length(5, 255)
   public email!: string;
+
+  @ApiProperty({
+    description: 'The username',
+    example: 'example',
+    minLength: 3,
+    maxLength: 10,
+    type: String,
+  })
+  @IsString()
+  @Length(3, 10)
+  public username!: string;
 }

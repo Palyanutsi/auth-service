@@ -70,12 +70,13 @@ export class AuthService {
     dto: SignUpDto,
     domain?: string,
   ): Promise<IConfirmEmailResponse> {
-    const { name, email, password1, password2 } = dto;
+    const { name, email, password1, password2, username } = dto;
     this.comparePasswords(password1, password2);
     const user = await this.usersService.create(
       OAuthProvidersEnum.LOCAL,
       email,
       name,
+      username,
       password1,
     );
 
