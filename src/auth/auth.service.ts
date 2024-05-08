@@ -51,6 +51,21 @@ export class AuthService {
     private readonly syncService: SyncService,
   ) {}
 
+  private async generateEmailCodeAndToken(user: UserEntity, domain?: string) {
+    const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
+    const confirmationToken = await this.jwtService.generateToken(
+      user,
+      TokenTypeEnum.CONFIRMATION,
+      domain,
+      '0',
+      await hash(confirmationCode, 10),
+    );
+    return {
+      code: confirmationCode,
+      token: confirmationToken,
+    };
+  }
+
   public async signUp(
     dto: SignUpDto,
     domain?: string,
@@ -64,17 +79,9 @@ export class AuthService {
       password1,
     );
 
-    const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
-    const confirmationToken = await this.jwtService.generateToken(
-      user,
-      TokenTypeEnum.CONFIRMATION,
-      domain,
-      '0',
-      await hash(confirmationCode, 10),
-    );
-
-    this.mailerService.sendConfirmationEmail(user, confirmationCode);
-    return { confirmationToken };
+    const confirmation = await this.generateEmailCodeAndToken(user, domain);
+    this.mailerService.sendConfirmationEmail(user, confirmation.code);
+    return { confirmationToken: confirmation.token };
   }
 
   public async confirmEmail(
@@ -108,12 +115,9 @@ export class AuthService {
       await this.checkLastPassword(user.credentials, password);
     }
     if (!user.confirmed) {
-      const confirmationToken = await this.jwtService.generateToken(
-        user,
-        TokenTypeEnum.CONFIRMATION,
-        domain,
-      );
-      this.mailerService.sendConfirmationEmail(user, confirmationToken);
+      const confirmation = await this.generateEmailCodeAndToken(user, domain);
+      this.mailerService.sendConfirmationEmail(user, confirmation.code);
+
       throw new UnauthorizedException(
         'Please confirm your email, a new email has been sent',
       );
