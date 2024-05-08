@@ -35,7 +35,7 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { SignInDto } from './dtos/sign-in.dto';
 import { SignUpDto } from './dtos/sign-up.dto';
 import { IAuthResult } from './interfaces/auth-result.interface';
-import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
+import { IConfirmEmailResponse } from './interfaces/auth-signup-response.interface';
 import { v4 as uuidv4 } from 'uuid';
 import { SyncService } from '../sync/sync.service';
 
@@ -69,7 +69,7 @@ export class AuthService {
   public async signUp(
     dto: SignUpDto,
     domain?: string,
-  ): Promise<IAuthSignupResponse> {
+  ): Promise<IConfirmEmailResponse> {
     const { name, email, password1, password2 } = dto;
     this.comparePasswords(password1, password2);
     const user = await this.usersService.create(
@@ -107,7 +107,10 @@ export class AuthService {
     return { user, accessToken, refreshToken };
   }
 
-  public async signIn(dto: SignInDto, domain?: string): Promise<IAuthResult> {
+  public async signIn(
+    dto: SignInDto,
+    domain?: string,
+  ): Promise<IAuthResult | IConfirmEmailResponse> {
     const { emailOrUsername, password } = dto;
     const user = await this.userByEmailOrUsername(emailOrUsername);
 
@@ -118,9 +121,7 @@ export class AuthService {
       const confirmation = await this.generateEmailCodeAndToken(user, domain);
       this.mailerService.sendConfirmationEmail(user, confirmation.code);
 
-      throw new UnauthorizedException(
-        'Please confirm your email, a new email has been sent',
-      );
+      return { confirmationToken: confirmation.token };
     }
 
     const [accessToken, refreshToken] =

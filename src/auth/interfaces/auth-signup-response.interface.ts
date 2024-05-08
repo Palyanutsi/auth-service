@@ -1,3 +1,3 @@
-export interface IAuthSignupResponse {
+export interface IConfirmEmailResponse {
   confirmationToken: string;
 }

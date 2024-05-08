@@ -10,7 +10,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Patch,
   Post,
   Req,
@@ -20,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  ApiAcceptedResponse,
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -48,7 +48,7 @@ import { IOAuthProvidersResponse } from './interfaces/oauth-provider-response.in
 import { AuthResponseUserMapper } from './mappers/auth-response-user.mapper';
 import { AuthResponseMapper } from './mappers/auth-response.mapper';
 import { OAuthProvidersResponseMapper } from './mappers/oauth-provider-response.mapper';
-import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
+import { ConfirmationTokenResponseMapper } from './mappers/confirmationToken-response.mapper';
 
 @ApiTags('Auth')
 @Controller('api/auth')
@@ -82,11 +82,17 @@ export class AuthController {
     description: 'Something is invalid on the request body',
   })
   public async signUp(
+    @Res() res: FastifyReply,
     @Origin() origin: string | undefined,
     @Body() signUpDto: SignUpDto,
-  ): Promise<IAuthSignupResponse> {
+  ): Promise<void> {
     // TODO: make sure that user knows that username is taken
-    return await this.authService.signUp(signUpDto, origin);
+    const result = await this.authService.signUp(signUpDto, origin);
+
+    res
+      .header('Content-Type', 'application/json')
+      .status(HttpStatus.CREATED)
+      .send(ConfirmationTokenResponseMapper.map(result));
   }
 
   @Public()
@@ -94,6 +100,10 @@ export class AuthController {
   @ApiOkResponse({
     type: AuthResponseMapper,
     description: 'Logs in the user and returns the access token',
+  })
+  @ApiAcceptedResponse({
+    type: ConfirmationTokenResponseMapper,
+    description: 'User needs to confirm his email',
   })
   @ApiBadRequestResponse({
     description: 'Something is invalid on the request body',
@@ -107,9 +117,18 @@ export class AuthController {
     @Body() singInDto: SignInDto,
   ): Promise<void> {
     const result = await this.authService.signIn(singInDto, origin);
-    this.saveRefreshCookie(res, result.refreshToken)
-      .status(HttpStatus.OK)
-      .send(AuthResponseMapper.map(result));
+
+    if ('refreshToken' in result) {
+      this.saveRefreshCookie(res, result.refreshToken)
+        .status(HttpStatus.OK)
+        .send(AuthResponseMapper.map(result));
+      return;
+    }
+
+    res
+      .header('Content-Type', 'application/json')
+      .status(HttpStatus.ACCEPTED)
+      .send(ConfirmationTokenResponseMapper.map(result));
   }
 
   @Public()
