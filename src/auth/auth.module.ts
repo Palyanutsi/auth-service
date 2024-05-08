@@ -11,9 +11,10 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { HttpModule } from '@nestjs/axios';
+import { SyncModule } from '../sync/sync.module';
 
 @Module({
-  imports: [UsersModule, JwtModule, MailerModule, HttpModule],
+  imports: [UsersModule, JwtModule, MailerModule, HttpModule, SyncModule],
   providers: [AuthService],
   controllers: [AuthController],
 })
