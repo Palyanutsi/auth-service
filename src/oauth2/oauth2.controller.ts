@@ -5,6 +5,7 @@
 */
 
 import {
+  Body,
   Controller,
   Get,
   HttpStatus,
@@ -37,12 +38,13 @@ export class Oauth2Controller {
   private readonly cookieName: string;
   private readonly refreshTime: number;
   private readonly testing: boolean;
+  private redirectUri: string;
 
   constructor(
     private readonly oauth2Service: Oauth2Service,
     private readonly configService: ConfigService,
   ) {
-    this.url = `https://${this.configService.get<string>('domain')}`;
+    this.url = `http://${this.configService.get<string>('domain')}`; // TODO: use HTTPS
     this.cookieName = this.configService.get<string>('REFRESH_COOKIE');
     this.refreshTime = this.configService.get<number>('jwt.refresh.time');
     this.testing = this.configService.get<boolean>('testing');
@@ -84,7 +86,7 @@ export class Oauth2Controller {
 
   @Public()
   @UseGuards(OAuthFlagGuard(OAuthProvidersEnum.GOOGLE))
-  @Get('google')
+  @Get('google:redirectUri')
   @ApiResponse({
     description: 'Redirects to Google OAuth2 login page',
     status: HttpStatus.TEMPORARY_REDIRECT,
@@ -92,7 +94,11 @@ export class Oauth2Controller {
   @ApiNotFoundResponse({
     description: 'OAuth2 is not enabled for Google',
   })
-  public google(@Res() res: FastifyReply): FastifyReply {
+  public google(
+    @Query('redirect_uri') redirect_uri: string, // TODO: create class
+    @Res() res: FastifyReply,
+  ): FastifyReply {
+    this.redirectUri = redirect_uri;
     return this.startRedirect(res, OAuthProvidersEnum.GOOGLE);
   }
 
@@ -210,15 +216,18 @@ export class Oauth2Controller {
       email,
       name,
     );
+    const expires = new Date(Date.now() + this.refreshTime * 1000)
     return res
       .cookie(this.cookieName, refreshToken, {
         secure: !this.testing,
         httpOnly: true,
         signed: true,
         path: this.cookiePath,
-        expires: new Date(Date.now() + this.refreshTime * 1000),
+        expires: expires,
       })
       .status(HttpStatus.PERMANENT_REDIRECT)
-      .redirect(`${this.url}/?access_token=${accessToken}`);
+      .redirect(
+        `${this.redirectUri}?access_token=${accessToken}&refresh_token=${refreshToken}&expires=${expires}`,
+      );
   }
 }
