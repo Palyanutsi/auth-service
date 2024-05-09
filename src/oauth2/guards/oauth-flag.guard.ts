@@ -7,6 +7,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   mixin,
   NotFoundException,
   Type,
@@ -21,7 +22,9 @@ export const OAuthFlagGuard = (
   provider: OAuthProvidersEnum,
 ): Type<CanActivate> => {
   class OAuthFlagGuardClass implements CanActivate {
-    constructor(private readonly configService: ConfigService) {}
+    constructor(
+      @Inject(ConfigService) private readonly configService: ConfigService,
+    ) {}
 
     public canActivate(context: ExecutionContext): boolean {
       const client = this.configService.get<IClient | null>(
