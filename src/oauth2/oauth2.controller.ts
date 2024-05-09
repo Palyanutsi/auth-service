@@ -99,7 +99,6 @@ export class Oauth2Controller {
     @Res() res: FastifyReply,
   ): FastifyReply {
     this.redirectUri = redirect_uri;
-    console.log(redirect_uri);
     return this.startRedirect(res, OAuthProvidersEnum.GOOGLE);
   }
 
