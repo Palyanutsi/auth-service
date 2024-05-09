@@ -226,6 +226,8 @@ export class Oauth2Controller {
         expires: new Date(Date.now() + this.refreshTime * 1000),
       })
       .status(HttpStatus.PERMANENT_REDIRECT)
-      .redirect(`${this.redirectUri}?access_token=${accessToken}`);
+      .redirect(
+        `${this.redirectUri}?access_token=${accessToken}&refresh_token=${refreshToken}`,
+      );
   }
 }
