@@ -216,17 +216,18 @@ export class Oauth2Controller {
       email,
       name,
     );
+    const expires = new Date(Date.now() + this.refreshTime * 1000)
     return res
       .cookie(this.cookieName, refreshToken, {
         secure: !this.testing,
         httpOnly: true,
         signed: true,
         path: this.cookiePath,
-        expires: new Date(Date.now() + this.refreshTime * 1000),
+        expires: expires,
       })
       .status(HttpStatus.PERMANENT_REDIRECT)
       .redirect(
-        `${this.redirectUri}?access_token=${accessToken}&refresh_token=${refreshToken}`,
+        `${this.redirectUri}?access_token=${accessToken}&refresh_token=${refreshToken}&expires=${expires}`,
       );
   }
 }
