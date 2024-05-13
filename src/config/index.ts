@@ -49,10 +49,6 @@ export function config(): IConfig {
         secret: process.env.JWT_RESET_PASSWORD_SECRET,
         time: parseInt(process.env.JWT_RESET_PASSWORD_TIME, 10),
       },
-      generateSession: {
-          secret: process.env.JWT_GENERATE_SESSION_SECRET,
-          time: parseInt(process.env.JWT_GENERATE_SESSION_TIME, 10),
-      },
       refresh: {
         secret: process.env.JWT_REFRESH_SECRET,
         time: parseInt(process.env.JWT_REFRESH_TIME, 10),

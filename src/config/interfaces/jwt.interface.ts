@@ -19,6 +19,5 @@ export interface IJwt {
   access: IAccessJwt;
   confirmation: ISingleJwt;
   resetPassword: ISingleJwt;
-  generateSession: ISingleJwt
   refresh: ISingleJwt;
 }

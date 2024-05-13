@@ -154,19 +154,6 @@ export class JwtService {
                 },
             ),
         )
-        case TokenTypeEnum.GENERATE_SESSION:
-            const { secret, time } =
-                this.jwtConfig.generateSession
-            return this.commonService.throwInternalError(
-                JwtService.generateTokenAsync(
-                    payload,
-                    secret,
-                    {
-                        ...jwtOptions,
-                        expiresIn: time,
-                    },
-                ),
-            )
     }
   }
 

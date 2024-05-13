@@ -60,5 +60,6 @@ import { ScheduleModule } from '@nestjs/schedule';
       useClass: AuthGuard,
     },
   ],
+  controllers: [],
 })
 export class AppModule {}

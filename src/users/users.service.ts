@@ -1,9 +1,3 @@
-/*
-  Free and Open Source - GNU LGPLv3
-  Copyright © 2023
-  Afonso Barracha
-*/
-
 import { QueryOrder } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
@@ -25,6 +19,7 @@ import { CredentialsEmbeddable } from './embeddables/credentials.embeddable';
 import { OAuthProviderEntity } from './entities/oauth-provider.entity';
 import { UserEntity } from './entities/user.entity';
 import { OAuthProvidersEnum } from './enums/oauth-providers.enum';
+import { ChangeUserDetailsDto } from "../auth/dtos/change-user-details.dto";
 
 @Injectable()
 export class UsersService {
@@ -39,24 +34,18 @@ export class UsersService {
   public async create(
     provider: OAuthProvidersEnum,
     email: string,
-    name: string,
-    password?: string,
   ): Promise<UserEntity> {
-    const isConfirmed = provider !== OAuthProvidersEnum.LOCAL;
-    const formattedEmail = email.toLowerCase();
-    await this.checkEmailUniqueness(formattedEmail);
-    const formattedName = this.commonService.formatName(name);
+    const isConfirmed = provider !== OAuthProvidersEnum.LOCAL
+    const formattedEmail = email.toLowerCase()
+    await this.checkEmailUniqueness(formattedEmail)
     const user = this.usersRepository.create({
       email: formattedEmail,
-      name: formattedName,
-      username: await this.generateUsername(formattedName),
-      password: isUndefined(password) ? 'UNSET' : await hash(password, 10),
       confirmed: isConfirmed,
-      credentials: new CredentialsEmbeddable(isConfirmed),
-    });
-    await this.commonService.saveEntity(this.usersRepository, user, true);
-    await this.createOAuthProvider(provider, user.id);
-    return user;
+    })
+
+    await this.commonService.saveEntity(this.usersRepository, user, true)
+    await this.createOAuthProvider(provider, user.id)
+    return user
   }
 
   public async findOneByIdOrUsername(
@@ -179,10 +168,10 @@ export class UsersService {
     password?: string,
   ): Promise<UserEntity> {
     const user = await this.findOneById(userId);
-
     if (user.password === 'UNSET') {
       await this.createOAuthProvider(OAuthProvidersEnum.LOCAL, user.id);
-    } else {
+    }
+    if (user.password !== null) {
       if (isUndefined(password) || isNull(password)) {
         throw new BadRequestException('Password is required');
       }
@@ -193,8 +182,15 @@ export class UsersService {
         throw new BadRequestException('New password must be different');
       }
     }
-
     return await this.changePassword(user, newPassword);
+  }
+
+  public async updateUserDetails(
+    userId: number,
+    dto: ChangeUserDetailsDto,
+  ): Promise<UserEntity> {
+    const user = await this.findOneById(userId)
+    return await this.changeUserDetails(user, dto)
   }
 
   public async resetPassword(
@@ -256,7 +252,7 @@ export class UsersService {
     );
 
     if (isUndefined(user) || isNull(user)) {
-      return this.create(provider, email, name);
+      return this.create(provider, email);
     }
     if (
       isUndefined(
@@ -288,6 +284,17 @@ export class UsersService {
     user.password = await hash(password, 10);
     await this.commonService.saveEntity(this.usersRepository, user);
     return user;
+  }
+
+  private async changeUserDetails(
+    user: UserEntity,
+    dto: ChangeUserDetailsDto,
+  ): Promise<UserEntity> {
+    user.username = dto.username
+    user.name = dto.name
+    //user.lastname = dto.lastname // TODO: add
+    await this.commonService.saveEntity(this.usersRepository, user)
+    return user
   }
 
   private async checkUsernameUniqueness(username: string): Promise<void> {
