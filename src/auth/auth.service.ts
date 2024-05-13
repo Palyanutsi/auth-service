@@ -37,6 +37,7 @@ import { SignUpDto } from './dtos/sign-up.dto';
 import { IAuthResult } from './interfaces/auth-result.interface';
 import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { SyncService } from '../sync/sync.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import {IUser} from "../users/interfaces/user.interface";
@@ -52,8 +53,23 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
-    private readonly httpService: HttpService,
+    private readonly syncService: SyncService,
   ) {}
+
+  private async generateEmailCodeAndToken(user: UserEntity, domain?: string) {
+    const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
+    const confirmationToken = await this.jwtService.generateToken(
+      user,
+      TokenTypeEnum.CONFIRMATION,
+      domain,
+      '0',
+      await hash(confirmationCode, 10),
+    );
+    return {
+      code: confirmationCode,
+      token: confirmationToken,
+    };
+  }
 
   public async signUp(
     dto: EmailDto,
@@ -86,15 +102,8 @@ export class AuthService {
     }
 
     const user = await this.usersService.confirmEmail(id, version);
-    // TODO: what if failed?
-    const checkRes = await firstValueFrom(
-      // TODO: use from env url
-      this.httpService.post('http://localhost:5000/users', {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      }),
-    )
+    await this.syncService.sync(user);
+
     const [accessToken, refreshToken] =
       await this.jwtService.generateAuthTokens(user, domain);
     return { user, accessToken, refreshToken };
