@@ -41,6 +41,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import {IUser} from "../users/interfaces/user.interface";
 import {IAuthConfirmationTokenInterface} from "./interfaces/auth-confirmation-token.interface";
+import { ChangeUserDetailsDto } from "./dtos/change-user-details.dto";
 
 @Injectable()
 export class AuthService {
@@ -55,22 +56,18 @@ export class AuthService {
   ) {}
 
   public async signUp(
-    dto: SignUpDto,
+    dto: EmailDto,
     domain?: string,
-  ): Promise<IAuthSignupResponse> {
-    const { name, email, password1, password2 } = dto;
-    this.comparePasswords(password1, password2);
+  ) { // TODO: add : Promise<IAuthSignupResponse>
+    const { email } = dto
     const user = await this.usersService.create(
       OAuthProvidersEnum.LOCAL,
-      email,
-      name,
-      password1,
-    );
+      email
+    )
 
     const {confirmationToken, confirmationCode} = await this.generateConfirmationToken(user, domain)
-
-    this.mailerService.sendConfirmationEmail(user, confirmationCode);
-    return { confirmationToken };
+    this.mailerService.sendConfirmationEmail(user, confirmationCode)
+    return { confirmationToken, confirmationCode }
   }
 
   public async confirmEmail(
@@ -97,7 +94,7 @@ export class AuthService {
         username: user.username,
         email: user.email,
       }),
-    );
+    )
     const [accessToken, refreshToken] =
       await this.jwtService.generateAuthTokens(user, domain);
     return { user, accessToken, refreshToken };
@@ -191,9 +188,52 @@ export class AuthService {
       password1,
       password,
     );
-    const [accessToken, refreshToken] =
-      await this.jwtService.generateAuthTokens(user, domain);
+
+    const [accessToken, refreshToken] = await this.jwtService.generateAuthTokens(user, domain);
     return { user, accessToken, refreshToken };
+  }
+
+  public async updateUserDetails(
+    userId: number,
+    dto: ChangeUserDetailsDto,
+    domain?: string
+  ): Promise<any> {
+    await this.validateUserDetails(dto)
+
+    const user = await this.usersService.updateUserDetails(
+      userId,
+      dto
+    )
+    const [accessToken, refreshToken] = await this.jwtService.generateAuthTokens(user, domain)
+    return { user, accessToken, refreshToken }
+  }
+
+  private async validateUserDetails(
+    userDetails: ChangeUserDetailsDto,
+  ): Promise<any> {
+    let isUsernameExist = null
+
+    try {
+      isUsernameExist = await this.usersService.findOneByUsername(
+        userDetails.username
+      )
+    } catch (error) {
+      if (userDetails.username.length < 2) {
+        throw new BadRequestException('Username should be longer then 1 symbol')
+      }
+
+      if (isUsernameExist) {
+        throw new BadRequestException('The username has already been taken')
+      }
+
+      if (userDetails.name.length === 0) {
+        throw new BadRequestException('Name is required')
+      }
+
+      if (userDetails.lastname.length === 0) {
+        throw new BadRequestException('Lastname is required')
+      }
+    }
   }
 
   private async checkLastPassword(
