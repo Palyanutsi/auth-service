@@ -59,12 +59,11 @@ export class AuthService {
   private async generateEmailCodeAndToken(user: UserEntity, domain?: string) {
     const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
     const confirmationToken = await this.jwtService.generateToken(
-      user,
-      TokenTypeEnum.CONFIRMATION,
-      domain,
-      '0',
       await hash(confirmationCode, 10),
-    );
+      user.email,
+      TokenTypeEnum.CONFIRMATION,
+      domain
+    )
     return {
       code: confirmationCode,
       token: confirmationToken,
