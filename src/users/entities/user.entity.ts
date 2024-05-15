@@ -12,7 +12,7 @@ import {
   PrimaryKey,
   Property,
 } from '@mikro-orm/core';
-import { IsBoolean, IsEmail, IsString, Length, Matches } from 'class-validator';
+import { ValidateIf, IsBoolean, IsEmail, IsString, Length, Matches } from 'class-validator';
 import {
   BCRYPT_HASH_OR_UNSET,
   NAME_REGEX,
@@ -27,21 +27,23 @@ export class UserEntity implements IUser {
   @PrimaryKey()
   public id: number;
 
-  @Property({ columnType: 'varchar', length: 100 })
+  @Property({ columnType: 'varchar', length: 100, nullable: true })
+  @ValidateIf(field => !field)
   @IsString()
   @Length(3, 100)
   @Matches(NAME_REGEX, {
     message: 'Name must not have special characters',
   })
-  public name: string;
+  public name?: string | null
 
-  @Property({ columnType: 'varchar', length: 106 })
+  @Property({ columnType: 'varchar',  length: 106, nullable: true })
+  @ValidateIf(field => !field)
   @IsString()
   @Length(3, 106)
   @Matches(SLUG_REGEX, {
     message: 'Username must be a valid slugs',
   })
-  public username: string;
+  public username?: string | null
 
   @Property({ columnType: 'varchar', length: 255 })
   @IsString()
@@ -49,13 +51,14 @@ export class UserEntity implements IUser {
   @Length(5, 255)
   public email: string;
 
-  @Property({ columnType: 'varchar', length: 60 })
+  @Property({ columnType: 'varchar', length: 60, nullable: true })
+  @ValidateIf(field => !field)
   @IsString()
   @Length(5, 60)
   @Matches(BCRYPT_HASH_OR_UNSET)
-  public password: string;
+  public password: string | null
 
-  @Property({ columnType: 'boolean', default: false })
+  @Property({ columnType: 'boolean', default: false, nullable: true })
   @IsBoolean()
   public confirmed: true | false = false;
 
