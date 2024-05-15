@@ -1,4 +1,4 @@
 export interface IEmailConfirmData {
-  name: string;
+  name: string
   code: string;
 }

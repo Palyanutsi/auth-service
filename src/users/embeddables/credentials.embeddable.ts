@@ -26,9 +26,9 @@ export class CredentialsEmbeddable implements ICredentials {
     this.version = isConfirmed ? 1 : 0;
   }
 
-  public updatePassword(password: string): void {
+  public updatePassword(password: string | null): void {
     this.version++;
-    this.lastPassword = password;
+    this.lastPassword = password ?? '';
     const now = dayjs().unix();
     this.passwordUpdatedAt = now;
     this.updatedAt = now;

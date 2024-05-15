@@ -246,8 +246,11 @@ describe('AuthController', () => {
 
     it('should refresh token', async () => {
       const token = await jwtService.generateToken(
-        mockUser,
-        TokenTypeEnum.REFRESH,
+          {
+            id: mockUser.id,
+            version: mockUser.credentials.version,
+            tokenId: v4(),
+          }, mockUser.email, TokenTypeEnum.REFRESH
       );
       req.setCookie(cookieName, token);
       await controller.refreshAccess(req, res);
