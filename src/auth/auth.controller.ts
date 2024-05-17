@@ -49,6 +49,8 @@ import { AuthResponseUserMapper } from './mappers/auth-response-user.mapper';
 import { AuthResponseMapper } from './mappers/auth-response.mapper';
 import { OAuthProvidersResponseMapper } from './mappers/oauth-provider-response.mapper';
 import { ConfirmationTokenResponseMapper } from './mappers/confirmationToken-response.mapper';
+import { IAuthSignupResponse } from './interfaces/auth-signup-response.interface';
+import { ChangeUserDetailsDto } from "./dtos/change-user-details.dto";
 
 @ApiTags('Auth')
 @Controller('api/auth')
@@ -237,6 +239,7 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
+  @Public()
   @Patch('/update-password')
   @ApiOkResponse({
     type: AuthResponseMapper,
@@ -259,6 +262,31 @@ export class AuthController {
     this.saveRefreshCookie(res, result.refreshToken)
       .status(HttpStatus.OK)
       .send(AuthResponseMapper.map(result));
+  }
+
+  @Public()
+  @Patch('/update-user-details')
+  @ApiOkResponse({
+    type: AuthResponseMapper,
+    description: 'The username has been updated',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The user is not logged in.',
+  })
+  public async updateUserDetails(
+    @CurrentUser() userId: number,
+    @Origin() origin: string | undefined,
+    @Body() changeUserDetailsDto: ChangeUserDetailsDto,
+    @Res() res: FastifyReply,
+  ): Promise<void> {
+    const result = await this.authService.updateUserDetails(
+      userId,
+      changeUserDetailsDto,
+      origin,
+    )
+    this.saveRefreshCookie(res, result.refreshToken)
+      .status(HttpStatus.OK)
+      .send(AuthResponseMapper.map(result))
   }
 
   @Get('/me')

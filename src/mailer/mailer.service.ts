@@ -60,10 +60,10 @@ export class MailerService {
   }
 
   public sendConfirmationEmail(user: IUser, confirmationCode: string): void {
-    const { email, name } = user;
+    const { email } = user;
     const subject = 'Confirm your email';
     const html = this.templates.confirmation({
-      name: name,
+      name: email,
       code: confirmationCode,
     });
     this.sendEmail(email, subject, html, 'A new confirmation email was sent.');
