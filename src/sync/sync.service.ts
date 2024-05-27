@@ -14,7 +14,6 @@ export class SyncService {
     return await firstValueFrom(
       this.httpService.post(`${this.BACKEND_URL}/users/sync`, {
         id: user.id,
-        username: user.username,
         email: user.email,
       }),
     );

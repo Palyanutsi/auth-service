@@ -113,7 +113,7 @@ export class UsersService {
     const user = await this.usersRepository.findOne({ id });
     this.throwUnauthorizedException(user);
 
-    if (user.credentials.version !== version) {
+    if (user.credentials.version != version && version !== 0) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -286,13 +286,13 @@ export class UsersService {
     return user;
   }
 
-  private async changeUserDetails(
+  private async changeUserDetails( // TODO: remove
     user: UserEntity,
     dto: ChangeUserDetailsDto,
   ): Promise<UserEntity> {
     user.username = dto.username
     user.name = dto.name
-    //user.lastname = dto.lastname // TODO: add
+    user.lastname = dto.lastname
     await this.commonService.saveEntity(this.usersRepository, user)
     return user
   }

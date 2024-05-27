@@ -43,6 +43,7 @@ import { firstValueFrom } from 'rxjs';
 import {IUser} from "../users/interfaces/user.interface";
 import {IAuthConfirmationTokenInterface} from "./interfaces/auth-confirmation-token.interface";
 import { ChangeUserDetailsDto } from "./dtos/change-user-details.dto";
+import process from "node:process";
 
 @Injectable()
 export class AuthService {
@@ -97,11 +98,16 @@ export class AuthService {
       );
 
     if (!(await compare(dto.confirmationCode.toUpperCase(), code))) {
-      throw new BadRequestException('Wrong verification code');
+      throw new BadRequestException('Wrong verification code')
     }
 
-    const user = await this.usersService.confirmEmail(id, version);
-    await this.syncService.sync(user);
+    const user = await this.usersService.confirmEmail(id, version)
+
+    try {
+      await this.syncService.sync(user)
+    } catch (e) {
+      console.log(JSON.stringify(e, null, 2))
+    }
 
     const [accessToken, refreshToken] =
       await this.jwtService.generateAuthTokens(user, domain);
