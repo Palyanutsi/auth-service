@@ -39,11 +39,20 @@ export class UserEntity implements IUser {
   @Property({ columnType: 'varchar',  length: 106, nullable: true })
   @ValidateIf(field => !field)
   @IsString()
-  @Length(3, 106)
+  @Length(1, 106)
   @Matches(SLUG_REGEX, {
     message: 'Username must be a valid slugs',
   })
   public username?: string | null
+
+  @Property({ columnType: 'varchar',  length: 106, nullable: true })
+  @ValidateIf(field => !field)
+  @IsString()
+  @Length(1, 106)
+  @Matches(SLUG_REGEX, {
+    message: 'Lastname must be a valid slugs',
+  })
+  public lastname?: string | null
 
   @Property({ columnType: 'varchar', length: 255 })
   @IsString()
