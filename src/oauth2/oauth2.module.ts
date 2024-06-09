@@ -10,6 +10,7 @@ import { JwtModule } from '../jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
 import { Oauth2Controller } from './oauth2.controller';
 import { Oauth2Service } from './oauth2.service';
+import { SyncModule } from '../sync/sync.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Oauth2Service } from './oauth2.service';
       timeout: 5000,
       maxRedirects: 5,
     }),
+    SyncModule,
   ],
   controllers: [Oauth2Controller],
   providers: [Oauth2Service],

@@ -40,10 +40,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { SyncService } from '../sync/sync.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import {IUser} from "../users/interfaces/user.interface";
-import {IAuthConfirmationTokenInterface} from "./interfaces/auth-confirmation-token.interface";
-import { ChangeUserDetailsDto } from "./dtos/change-user-details.dto";
-import process from "node:process";
+import { IUser } from '../users/interfaces/user.interface';
+import { IAuthConfirmationTokenInterface } from './interfaces/auth-confirmation-token.interface';
+import { ChangeUserDetailsDto } from './dtos/change-user-details.dto';
+import process from 'node:process';
 
 @Injectable()
 export class AuthService {
@@ -63,27 +63,26 @@ export class AuthService {
       await hash(confirmationCode, 10),
       user.email,
       TokenTypeEnum.CONFIRMATION,
-      domain
-    )
+      domain,
+    );
     return {
       code: confirmationCode,
       token: confirmationToken,
     };
   }
 
-  public async signUp(
-    dto: EmailDto,
-    domain?: string,
-  ) { // TODO: add : Promise<IAuthSignupResponse>
-    const { email } = dto
+  public async signUp(dto: EmailDto, domain?: string) {
+    // TODO: add : Promise<IAuthSignupResponse>
+    const { email } = dto;
     const user = await this.usersService.create(
       OAuthProvidersEnum.LOCAL,
-      email
-    )
+      email,
+    );
 
-    const {confirmationToken, confirmationCode} = await this.generateConfirmationToken(user, domain)
-    this.mailerService.sendConfirmationEmail(user, confirmationCode)
-    return { confirmationToken, confirmationCode }
+    const { confirmationToken, confirmationCode } =
+      await this.generateConfirmationToken(user, domain);
+    this.mailerService.sendConfirmationEmail(user, confirmationCode);
+    return { confirmationToken, confirmationCode };
   }
 
   public async confirmEmail(
@@ -98,15 +97,15 @@ export class AuthService {
       );
 
     if (!(await compare(dto.confirmationCode.toUpperCase(), code))) {
-      throw new BadRequestException('Wrong verification code')
+      throw new BadRequestException('Wrong verification code');
     }
 
-    const user = await this.usersService.confirmEmail(id, version)
+    const user = await this.usersService.confirmEmail(id, version);
 
     try {
-      await this.syncService.sync(user)
+      await this.syncService.sync(user);
     } catch (e) {
-      console.log(JSON.stringify(e, null, 2))
+      console.log(JSON.stringify(e, null, 2));
     }
 
     const [accessToken, refreshToken] =
@@ -122,7 +121,8 @@ export class AuthService {
       await this.checkLastPassword(user.credentials, password);
     }
     if (!user.confirmed) {
-      const {confirmationToken, confirmationCode} = await this.generateConfirmationToken(user, domain)
+      const { confirmationToken, confirmationCode } =
+        await this.generateConfirmationToken(user, domain);
       this.mailerService.sendConfirmationEmail(user, confirmationCode);
       throw new UnauthorizedException(
         'Please confirm your email, a new email has been sent',
@@ -168,8 +168,8 @@ export class AuthService {
 
     if (!isUndefined(user) && !isNull(user)) {
       const resetToken = await this.jwtService.generateToken(
-          { id: user.id, version: user.credentials.version },
-          user.email,
+        { id: user.id, version: user.credentials.version },
+        user.email,
         TokenTypeEnum.RESET_PASSWORD,
         domain,
       );
@@ -203,49 +203,50 @@ export class AuthService {
       password,
     );
 
-    const [accessToken, refreshToken] = await this.jwtService.generateAuthTokens(user, domain);
+    const [accessToken, refreshToken] =
+      await this.jwtService.generateAuthTokens(user, domain);
     return { user, accessToken, refreshToken };
   }
 
   public async updateUserDetails(
     userId: number,
     dto: ChangeUserDetailsDto,
-    domain?: string
+    domain?: string,
   ): Promise<any> {
-    await this.validateUserDetails(dto)
+    await this.validateUserDetails(dto);
 
-    const user = await this.usersService.updateUserDetails(
-      userId,
-      dto
-    )
-    const [accessToken, refreshToken] = await this.jwtService.generateAuthTokens(user, domain)
-    return { user, accessToken, refreshToken }
+    const user = await this.usersService.updateUserDetails(userId, dto);
+    const [accessToken, refreshToken] =
+      await this.jwtService.generateAuthTokens(user, domain);
+    return { user, accessToken, refreshToken };
   }
 
   private async validateUserDetails(
     userDetails: ChangeUserDetailsDto,
   ): Promise<any> {
-    let isUsernameExist = null
+    let isUsernameExist = null;
 
     try {
       isUsernameExist = await this.usersService.findOneByUsername(
-        userDetails.username
-      )
+        userDetails.username,
+      );
     } catch (error) {
       if (userDetails.username.length < 2) {
-        throw new BadRequestException('Username should be longer then 1 symbol')
+        throw new BadRequestException(
+          'Username should be longer then 1 symbol',
+        );
       }
 
       if (isUsernameExist) {
-        throw new BadRequestException('The username has already been taken')
+        throw new BadRequestException('The username has already been taken');
       }
 
       if (userDetails.name.length === 0) {
-        throw new BadRequestException('Name is required')
+        throw new BadRequestException('Name is required');
       }
 
       if (userDetails.lastname.length === 0) {
-        throw new BadRequestException('Lastname is required')
+        throw new BadRequestException('Lastname is required');
       }
     }
   }
@@ -346,22 +347,25 @@ export class AuthService {
     return this.usersService.findOneByUsername(emailOrUsername, true);
   }
 
-  private async generateConfirmationToken (user: IUser, domain: string): Promise<IAuthConfirmationTokenInterface>{
+  private async generateConfirmationToken(
+    user: IUser,
+    domain: string,
+  ): Promise<IAuthConfirmationTokenInterface> {
     const confirmationCode = uuidv4().toString().substring(0, 6).toUpperCase();
     const confirmationToken = await this.jwtService.generateToken(
-        {
-          id: user.id,
-          code: await hash(confirmationCode, 10),
-          version: user.credentials.version,
-        },
-        user.email,
-        TokenTypeEnum.CONFIRMATION,
-        domain
-    )
+      {
+        id: user.id,
+        code: await hash(confirmationCode, 10),
+        version: user.credentials.version,
+      },
+      user.email,
+      TokenTypeEnum.CONFIRMATION,
+      domain,
+    );
 
     return {
       confirmationToken,
-      confirmationCode
-    }
+      confirmationCode,
+    };
   }
 }

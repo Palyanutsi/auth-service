@@ -21,6 +21,7 @@ import { UsersService } from '../users/users.service';
 import { OAuthClass } from './classes/oauth.class';
 import { ICallbackQuery } from './interfaces/callback-query.interface';
 import { IClient } from './interfaces/client.interface';
+import { SyncService } from '../sync/sync.service';
 
 @Injectable()
 export class Oauth2Service {
@@ -35,6 +36,7 @@ export class Oauth2Service {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly commonService: CommonService,
+    private readonly syncService: SyncService,
   ) {
     const url = configService.get<string>('url');
     this[OAuthProvidersEnum.MICROSOFT] = Oauth2Service.setOAuthClass(
@@ -108,6 +110,12 @@ export class Oauth2Service {
     name: string,
   ): Promise<[string, string]> {
     const user = await this.usersService.findOrCreate(provider, email, name);
+    try {
+      await this.syncService.sync(user);
+    } catch (e) {
+      console.log(JSON.stringify(e, null, 2));
+    }
+
     return this.jwtService.generateAuthTokens(user);
   }
 
