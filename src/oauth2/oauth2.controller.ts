@@ -211,7 +211,7 @@ export class Oauth2Controller {
     email: string,
     name: string,
   ): Promise<FastifyReply> {
-    const [accessToken, refreshToken] = await this.oauth2Service.login(
+    const [accessToken, refreshToken] = await this.oauth2Service.loginOrCreate(
       provider,
       email,
       name,

@@ -102,7 +102,7 @@ export class Oauth2Service {
     return userData.data;
   }
 
-  public async login(
+  public async loginOrCreate(
     provider: OAuthProvidersEnum,
     email: string,
     name: string,
